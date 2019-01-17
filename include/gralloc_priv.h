@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017, The Linux Foundation. All rights reserved.
  * Not a Contribution
  *
  * Copyright (C) 2008 The Android Open Source Project
@@ -20,65 +20,67 @@
 #ifndef __GRALLOC_PRIV_H__
 #define __GRALLOC_PRIV_H__
 
-#include <errno.h>
 #include <unistd.h>
 #include "gr_priv_handle.h"
 
-#define GRALLOC_PROP_PREFIX  "vendor.gralloc."
-#define GRALLOC_PROP(prop_name) GRALLOC_PROP_PREFIX prop_name
-
-#define DISABLE_UBWC_PROP                    GRALLOC_PROP("disable_ubwc")
-#define ENABLE_FB_UBWC_PROP                  GRALLOC_PROP("enable_fb_ubwc")
-#define MAP_FB_MEMORY_PROP                   GRALLOC_PROP("map_fb_memory")
-#define USE_SYSTEM_HEAP_FOR_SENSORS          GRALLOC_PROP("use_system_heap_for_sensors")
-
 #define ROUND_UP_PAGESIZE(x) roundUpToPageSize(x)
 inline int roundUpToPageSize(int x) {
-  return (x + (getpagesize() - 1)) & ~(getpagesize() - 1);
+    return (x + (getpagesize()-1)) & ~(getpagesize()-1);
 }
 
 /* Gralloc usage bits indicating the type of allocation that should be used */
-/* Refer to BufferUsage in hardware/interfaces/graphics/common/<ver>/types.hal */
+/* Refer gralloc1_producer_usage_t & gralloc1_consumer_usage-t in gralloc1.h */
 
-/* The bits below are in officially defined vendor space
- * i.e bits 28-31 and 48-63*/
+/* Producer flags */
 /* Non linear, Universal Bandwidth Compression */
-#define GRALLOC_USAGE_PRIVATE_ALLOC_UBWC (UINT32_C(1) << 28)
+#define GRALLOC1_PRODUCER_USAGE_PRIVATE_ALLOC_UBWC  GRALLOC1_PRODUCER_USAGE_PRIVATE_0
 
 /* Set this for allocating uncached memory (using O_DSYNC),
  * cannot be used with noncontiguous heaps */
-#define GRALLOC_USAGE_PRIVATE_UNCACHED (UINT32_C(1) << 29)
+#define GRALLOC1_PRODUCER_USAGE_PRIVATE_UNCACHED    GRALLOC1_PRODUCER_USAGE_PRIVATE_1
 
-/* This flag is used to indicate P010 format */
-#define GRALLOC_USAGE_PRIVATE_10BIT (UINT32_C(1) << 30)
+/* CAMERA heap is a carveout heap for camera, is not secured */
+#define GRALLOC1_PRODUCER_USAGE_PRIVATE_CAMERA_HEAP GRALLOC1_PRODUCER_USAGE_PRIVATE_2
+
+/* ADSP heap is a carveout heap, is not secured */
+#define GRALLOC1_PRODUCER_USAGE_PRIVATE_ADSP_HEAP   GRALLOC1_PRODUCER_USAGE_PRIVATE_3
+
+/* IOMMU heap comes from manually allocated pages, can be cached/uncached, is not secured */
+#define GRALLOC1_PRODUCER_USAGE_PRIVATE_IOMMU_HEAP  GRALLOC1_PRODUCER_USAGE_PRIVATE_4
+
+/* MM heap is a carveout heap for video, can be secured */
+#define GRALLOC1_PRODUCER_USAGE_PRIVATE_MM_HEAP     GRALLOC1_PRODUCER_USAGE_PRIVATE_5
+
+/* Use legacy ZSL definition until we know the correct usage on gralloc1 */
+#define GRALLOC1_PRODUCER_USAGE_PRIVATE_CAMERA_ZSL  GRALLOC_USAGE_HW_CAMERA_ZSL
+
+
+/* Consumer flags */
+/* TODO(user): Fix when producer and consumer flags are actually separated */
+/* This flag is set for WFD usecase */
+#define GRALLOC1_CONSUMER_USAGE_PRIVATE_WFD            0x00200000
 
 /* This flag is used for SECURE display usecase */
-#define GRALLOC_USAGE_PRIVATE_SECURE_DISPLAY (UINT32_C(1) << 31)
-/* unused legacy flags */
-#define GRALLOC_USAGE_PRIVATE_MM_HEAP 0
-#define GRALLOC_USAGE_PRIVATE_IOMMU_HEAP 0
+#define GRALLOC1_CONSUMER_USAGE_PRIVATE_SECURE_DISPLAY 0x01000000
 
-/* TODO(user): move these to use sanctioned vendor bits
- * once end to end 64-bit support is available */
-/* This flag is set for WFD usecase */
-#define GRALLOC_USAGE_PRIVATE_WFD (UINT32_C(1) << 21)
+/* Buffer content should be displayed on a primary display only */
+#define GRALLOC1_CONSUMER_USAGE_PRIVATE_INTERNAL_ONLY  0x04000000
 
-/* This flag is used to indicate 10-bit tight pack format (e.g. TP10) */
-#define GRALLOC_USAGE_PRIVATE_10BIT_TP (UINT32_C(1) << 27)
+/* Buffer content should be displayed on an external display only */
+#define GRALLOC1_CONSUMER_USAGE_PRIVATE_EXTERNAL_ONLY  0x08000000
 
-/* Legacy gralloc1 definitions */
+
+/* Legacy gralloc0.x definitions */
 /* Some clients may still be using the old flags */
-#define GRALLOC1_PRODUCER_USAGE_PRIVATE_ADSP_HEAP GRALLOC_USAGE_PRIVATE_ADSP_HEAP
-#define GRALLOC1_PRODUCER_USAGE_PRIVATE_ALLOC_UBWC GRALLOC_USAGE_PRIVATE_ALLOC_UBWC
-#define GRALLOC1_PRODUCER_USAGE_PRIVATE_UNCACHED GRALLOC_USAGE_PRIVATE_UNCACHED
-#define GRALLOC1_CONSUMER_USAGE_PRIVATE_SECURE_DISPLAY GRALLOC_USAGE_PRIVATE_SECURE_DISPLAY
-#define GRALLOC1_PRODUCER_USAGE_PRIVATE_MM_HEAP GRALLOC_USAGE_PRIVATE_MM_HEAP
-#define GRALLOC1_PRODUCER_USAGE_PRIVATE_10BIT GRALLOC_USAGE_PRIVATE_10BIT
-#define GRALLOC1_PRODUCER_USAGE_PRIVATE_10BIT_TP GRALLOC_USAGE_PRIVATE_10BIT_TP
-#define GRALLOC1_CONSUMER_USAGE_PRIVATE_10BIT_TP GRALLOC_USAGE_PRIVATE_10BIT_TP
+#define GRALLOC_USAGE_PRIVATE_ALLOC_UBWC GRALLOC1_PRODUCER_USAGE_PRIVATE_ALLOC_UBWC
+#define GRALLOC_USAGE_PRIVATE_UNCACHED GRALLOC1_PRODUCER_USAGE_PRIVATE_UNCACHED
+#define GRALLOC_USAGE_PRIVATE_IOMMU_HEAP GRALLOC1_PRODUCER_USAGE_PRIVATE_IOMMU_HEAP
+#define GRALLOC_USAGE_PRIVATE_WFD GRALLOC1_CONSUMER_USAGE_PRIVATE_WFD
+#define GRALLOC_USAGE_PRIVATE_CAMERA_HEAP GRALLOC1_PRODUCER_USAGE_PRIVATE_CAMERA_HEAP
+#define GRALLOC_USAGE_PRIVATE_SECURE_DISPLAY GRALLOC1_CONSUMER_USAGE_PRIVATE_SECURE_DISPLAY
+#define GRALLOC_USAGE_PRIVATE_MM_HEAP 0x0
 
-/* This flag is used to indicate video NV21 format */
-#define GRALLOC1_PRODUCER_USAGE_PRIVATE_VIDEO_NV21_ENCODER (1ULL << 48)
+
 
 // for PERFORM API :
 #define GRALLOC_MODULE_PERFORM_CREATE_HANDLE_FROM_BUFFER 1
@@ -95,13 +97,13 @@ inline int roundUpToPageSize(int x) {
 #define GRALLOC_MODULE_PERFORM_SET_IGC 12
 #define GRALLOC_MODULE_PERFORM_SET_SINGLE_BUFFER_MODE 13
 #define GRALLOC1_MODULE_PERFORM_GET_BUFFER_SIZE_AND_DIMENSIONS 14
-#define GRALLOC1_MODULE_PERFORM_GET_INTERLACE_FLAG 15
+#define GRALLOC1_MODULE_PERFORM_ALLOCATE_BUFFER 15
+#define GRALLOC1_MODULE_PERFORM_GET_INTERLACE_FLAG 16
 
 // OEM specific HAL formats
 #define HAL_PIXEL_FORMAT_RGBA_5551 6
 #define HAL_PIXEL_FORMAT_RGBA_4444 7
 #define HAL_PIXEL_FORMAT_NV12_ENCODEABLE 0x102
-#define HAL_PIXEL_FORMAT_NV21_ENCODEABLE 0x7FA30C00
 #define HAL_PIXEL_FORMAT_YCbCr_420_SP_VENUS 0x7FA30C04
 #define HAL_PIXEL_FORMAT_YCbCr_420_SP_TILED 0x7FA30C03
 #define HAL_PIXEL_FORMAT_YCbCr_420_SP 0x109
@@ -128,10 +130,9 @@ inline int roundUpToPageSize(int x) {
 #define HAL_PIXEL_FORMAT_XBGR_2101010 0x11D
 #define HAL_PIXEL_FORMAT_YCbCr_420_P010 0x11F
 #define HAL_PIXEL_FORMAT_YCbCr_420_P010_UBWC 0x124
-#define HAL_PIXEL_FORMAT_YCbCr_420_P010_VENUS 0x7FA30C0A
 
-#define HAL_PIXEL_FORMAT_CbYCrY_422_I 0x120
-#define HAL_PIXEL_FORMAT_BGR_888 0x121
+#define HAL_PIXEL_FORMAT_CbYCrY_422_I            0x120
+#define HAL_PIXEL_FORMAT_BGR_888                 0x121
 
 #define HAL_PIXEL_FORMAT_INTERLACE 0x180
 
@@ -144,7 +145,7 @@ inline int roundUpToPageSize(int x) {
 
 // UBWC aligned Venus format
 #define HAL_PIXEL_FORMAT_YCbCr_420_SP_VENUS_UBWC 0x7FA30C06
-#define HAL_PIXEL_FORMAT_YCbCr_420_TP10_UBWC 0x7FA30C09
+#define HAL_PIXEL_FORMAT_YCbCr_420_TP10_UBWC     0x7FA30C09
 
 // Khronos ASTC formats
 #define HAL_PIXEL_FORMAT_COMPRESSED_RGBA_ASTC_4x4_KHR 0x93B0
@@ -181,11 +182,11 @@ inline int roundUpToPageSize(int x) {
 #define HAL_IGC_s_RGB 1
 
 /* Color Space: Values maps to ColorSpace_t in qdMetadata.h */
-#define HAL_CSC_ITU_R_601 0
-#define HAL_CSC_ITU_R_601_FR 1
-#define HAL_CSC_ITU_R_709 2
-#define HAL_CSC_ITU_R_2020 3
-#define HAL_CSC_ITU_R_2020_FR 4
+#define HAL_CSC_ITU_R_601         0
+#define HAL_CSC_ITU_R_601_FR      1
+#define HAL_CSC_ITU_R_709         2
+#define HAL_CSC_ITU_R_2020        3
+#define HAL_CSC_ITU_R_2020_FR     4
 
 /* possible formats for 3D content*/
 enum {
